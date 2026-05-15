@@ -562,6 +562,7 @@ function buildVert(){
   const tbl=document.createElement('table');tbl.className='ct';tbl.style.minWidth='100%';
   const tbody=document.createElement('tbody');
   let firstLane=true;
+  let rowMonth=0;
 
   function mkRow(lblHtml,isSep,height,rowFn,trId){
     const tr=document.createElement('tr');if(isSep&&!firstLane)tr.classList.add('lane-sep');firstLane=false;
@@ -582,7 +583,7 @@ function buildVert(){
 
   // For each month
   for(let m=0;m<12;m++){
-    let rowMonth=m;
+    rowMonth=m;
     const nd=dim(m,year);
 
     // Month label row
