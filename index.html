@@ -11,6 +11,7 @@
   --bg:#fff;--bg2:#f7f7f5;--bg3:#f1efea;--border:#e5e3dc;--border2:#d0cdc4;
   --text:#1a1a18;--text2:#6b6964;--text3:#9e9b95;
   --blue:#378ADD;--blue-bg:#E6F1FB;--blue-txt:#0C447C;--blue-brd:#185FA5;
+  --hdr-dark:#3a382f;--hdr-dark-txt:rgba(255,255,255,.92);
   --teal:#1D9E75;--teal-bg:#E1F5EE;--teal-txt:#085041;--teal-brd:#0F6E56;
   --radius:8px;--radius-lg:12px;
 }
@@ -60,7 +61,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 table.ct{border-collapse:collapse;table-layout:fixed;background:var(--bg);}
 table.ct th,table.ct td{border:0.5px solid var(--border);padding:0;vertical-align:middle;}
 .th-lbl{width:92px;min-width:92px;background:var(--bg2);border-right:1.5px solid var(--border2)!important;position:sticky;left:0;z-index:4;}
-.th-mon{background:var(--bg2);text-align:left;padding:3px 6px;font-size:10px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;border-right:1.5px solid var(--border2)!important;}
+.th-mon{background:var(--hdr-dark);text-align:left;padding:3px 6px;font-size:10px;font-weight:500;color:var(--hdr-dark-txt);text-transform:uppercase;letter-spacing:.4px;border-right:1.5px solid var(--border2)!important;}
 .th-day{width:26px;min-width:26px;max-width:26px;background:var(--bg2);text-align:center;padding:2px 0 3px;}
 .th-day.wk{background:rgba(153,60,29,.06);}
 .th-day.th-tod{background:rgba(55,138,221,.18);}
@@ -146,6 +147,10 @@ table.ct th,table.ct td{border:0.5px solid var(--border);padding:0;vertical-alig
 .dclbl2{font-size:10px;color:var(--text2);margin:3px 0 7px;}
 .bill-cat-row{display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:0.5px solid var(--border);}
 .bill-cat-row:last-child{border-bottom:none;}
+/* MILESTONE TOOLTIP */
+.mstip{position:fixed;background:var(--text);color:#fff;padding:8px 10px;border-radius:8px;font-size:11px;z-index:300;pointer-events:none;box-shadow:0 6px 18px rgba(0,0,0,.28);max-width:200px;display:none;}
+.mstip-title{font-weight:500;margin-bottom:3px;}
+.mstip-sub{color:rgba(255,255,255,.65);font-size:10px;line-height:1.5;}
 /* LOADING */
 .loading-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:200;}
 .loading-logo{font-size:28px;font-weight:500;letter-spacing:-.5px;color:var(--text);}
@@ -170,6 +175,7 @@ table.ct th,table.ct td{border:0.5px solid var(--border);padding:0;vertical-alig
     <button class="yn" id="pY">&#8249;</button>
     <span class="yrlbl" id="yrL">2026</span>
     <button class="yn" id="nY">&#8250;</button>
+    <button class="ab abp" id="todayBtn" onclick="jumpToday()">Today</button>
     <div class="vsep"></div>
     <div class="tog">
       <button class="tb on" id="bCal" onclick="setView('cal')">Calendar</button>
@@ -368,7 +374,7 @@ function easter(y){const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=
 function addD(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r;}
 function fmtD(d){return d.toISOString().split('T')[0];}
 function nthMon(y,m,n){let d=new Date(y,m,1);while(d.getDay()!==1)d.setDate(d.getDate()+1);d.setDate(d.getDate()+(n-1)*7);return d;}
-function monBef(d){const r=new Date(d);while(r.getDay()!==1)r.setDate(r.getDate()-1);return r;}
+function monBef(d){const r=new Date(d);r.setDate(r.getDate()-1);while(r.getDay()!==1)r.setDate(r.getDate()-1);return r;}
 function canDay(y){const d=new Date(y,6,1);return d.getDay()===0?fmtD(new Date(y,6,2)):d.getDay()===6?fmtD(new Date(y,6,3)):fmtD(d);}
 function boxDay(y){const d=new Date(y,11,26);return(d.getDay()===0||d.getDay()===6)?fmtD(new Date(y,11,28)):fmtD(d);}
 let _ph=null;
@@ -469,16 +475,38 @@ function buildSB(){
   Object.entries(catTotals).sort((a,b)=>b[1]-a[1]).forEach(([cat,tot])=>{const c=BILL_CATS[cat]||BILL_CATS.other;html+=`<div class="bill-cat-row"><div style="width:7px;height:7px;border-radius:1px;background:${c.bar};flex-shrink:0;"></div><span style="font-size:11px;color:var(--text);flex:1;">${c.label}</span><span style="font-size:10px;color:var(--text2);">${fmt$(tot)}/yr</span></div>`;});
   html+=`<div class="sb-h">Upcoming bills</div>`;
   const upB=billOccurrences().filter(o=>o.date>=TODAY).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,6);
-  if(!upB.length)html+=`<div style="font-size:10px;color:var(--text3);">No upcoming bills</div>`;
+  if(!upB.length)html+=`<div style="font-size:10px;color:var(--text3);margin-bottom:6px;">No bills yet — add your first to see a monthly average.</div><button class="mb mbs" style="font-size:10px;padding:4px 9px;" onclick="openAddBill()">+ Add bill</button>`;
   upB.forEach(o=>{const c=o.c;const sd=new Date(o.date+'T00:00:00');html+=`<div class="tri" onclick="openEditBill('${o.id}')"><div class="trd" style="background:${c.bar};border-radius:2px;"></div><div style="flex:1;min-width:0;"><div class="trnm">${o.name}</div><div class="trdt">${sd.toLocaleDateString('en-CA',{month:'short',day:'numeric'})} · ${fmt$(o.amount)}</div></div></div>`;});
   html+=`<div class="sb-h">Upcoming events</div>`;
   const upE=expandedEvents().filter(e=>e.end>=TODAY&&!hidden.has(e.pid)).sort((a,b)=>a.start.localeCompare(b.start)).slice(0,5);
-  if(!upE.length)html+=`<div style="font-size:10px;color:var(--text3);">No upcoming events</div>`;
+  if(!upE.length)html+=`<div style="font-size:10px;color:var(--text3);margin-bottom:6px;">No upcoming events — plan your next trip or day off.</div><button class="mb mbs" style="font-size:10px;padding:4px 9px;" onclick="openAddEv(TODAY,people[0]?.id||'')">+ Add event</button>`;
   upE.forEach(ev=>{const p=pById(ev.pid);if(!p)return;const c=ppal(p);const sd=new Date(ev.start+'T00:00:00');html+=`<div class="tri" onclick="openEditEv('${ev._orig||ev.id}')"><div class="trd" style="background:${c.bar};"></div><div style="flex:1;min-width:0;"><div class="trnm">${ev.title}${ev.recur&&ev.recur!=='none'?' ↻':''}</div><div class="trdt">${p.name} · ${sd.toLocaleDateString('en-CA',{month:'short',day:'numeric'})}</div></div></div>`;});
   html+=`<div class="sb-h">Ontario holidays</div>`;
   getHolidays().forEach(h=>{const past=h.date<TODAY;const sd=new Date(h.date+'T00:00:00');html+=`<div class="phl-row" style="${past?'opacity:.4':''}"><div class="phl-dot" style="background:${h.stat?PH_C.bar:'#9FE1CB'};"></div><span style="font-size:10px;color:var(--text);flex:1;">${h.name}</span><span style="font-size:9px;color:var(--text3);">${sd.toLocaleDateString('en-CA',{month:'short',day:'numeric'})}</span></div>`;});
   sb.innerHTML=html;return sb;
 }
+
+/* ── MILESTONE TOOLTIP ── */
+function msTipEl(){
+  let tip=document.getElementById('msTip');
+  if(!tip){tip=document.createElement('div');tip.id='msTip';tip.className='mstip';document.body.appendChild(tip);}
+  return tip;
+}
+function showMsTip(e,ms,pr){
+  const tip=msTipEl();const past=ms.date<TODAY;const sd=new Date(ms.date+'T00:00:00');
+  tip.innerHTML=`<div class="mstip-title">${ms.name}</div><div class="mstip-sub">${pr.name} · ${sd.toLocaleDateString('en-CA',{month:'short',day:'numeric'})}</div><div class="mstip-sub">Owner: ${pr.initials} · ${past?'Completed':'On track'}</div>`;
+  tip.style.display='block';
+  positionMsTip(e);
+}
+function positionMsTip(e){
+  const tip=document.getElementById('msTip');if(!tip)return;
+  let x=e.clientX+12,y=e.clientY+12;
+  const w=tip.offsetWidth||180,h=tip.offsetHeight||50;
+  if(x+w>window.innerWidth-8)x=e.clientX-w-12;
+  if(y+h>window.innerHeight-8)y=e.clientY-h-12;
+  tip.style.left=x+'px';tip.style.top=y+'px';
+}
+function hideMsTip(){const tip=document.getElementById('msTip');if(tip)tip.style.display='none';}
 
 /* ── HORIZONTAL CALENDAR ── */
 function addBar(td,c,label,isSt,isSolo,onclick){
@@ -494,7 +522,7 @@ function addBar(td,c,label,isSt,isSolo,onclick){
 
 function buildHoriz(){
   const dl=dayList();
-  const wrap=document.createElement('div');wrap.style.cssText='overflow:auto;flex:1;';
+  const wrap=document.createElement('div');wrap.className='hwrap';wrap.style.cssText='overflow:auto;flex:1;';
   const tbl=document.createElement('table');tbl.className='ct';tbl.style.minWidth=(92+dl.length*26)+'px';
   const tr1=document.createElement('tr');const lh=document.createElement('th');lh.className='th-lbl';lh.style.height='26px';tr1.appendChild(lh);
   let cm=-1,sp=0,thM=null;
@@ -541,7 +569,7 @@ function buildHoriz(){
         if(isEn){inn.style.borderRight=`2px solid ${c.bar}`;if(!isSt)inn.style.borderRadius='0 3px 3px 0';}
         const bar=document.createElement('div');bar.className='eb';bar.appendChild(inn);td.appendChild(bar);}
       const ms=projMsOn(pr,day.str);
-      if(ms){const dia=document.createElement('div');dia.className='ms-dia';dia.style.cssText=`background:${c.brd};border:2px solid ${c.bg};width:10px;height:10px;`;dia.title=ms.name;dia.onclick=e=>{e.stopPropagation();openEditProject(pr.id);};td.appendChild(dia);td.style.cursor='pointer';}
+      if(ms){const dia=document.createElement('div');dia.className='ms-dia';dia.style.cssText=`background:${c.brd};border:2px solid ${c.bg};width:10px;height:10px;`;dia.onclick=e=>{e.stopPropagation();openEditProject(pr.id);};dia.onmouseenter=e=>showMsTip(e,ms,pr);dia.onmousemove=positionMsTip;dia.onmouseleave=hideMsTip;td.appendChild(dia);td.style.cursor='pointer';}
     });});
 
   const activeCats=[...new Set(bills.filter(b=>!hidden.has('cat_'+b.cat)).map(b=>b.cat))];
@@ -586,9 +614,10 @@ function buildVert(){
     rowMonth=m;
     const nd=dim(m,year);
 
-    // Month label row
-    mkRow(`<div style="font-size:11px;font-weight:500;color:var(--text2);">${MS[m]} ${year}</div>`,'',null,
-      (td,day)=>{td.style.cursor='default';td.style.background='var(--bg2)';td.style.fontSize='10px';td.style.fontWeight='500';if(day.d===1)td.textContent=MS[m];},`month-${m}`);
+    // Month label row (two-tone: dark band, matches horizontal view's month header)
+    mkRow(`<div style="font-size:11px;font-weight:500;color:var(--hdr-dark-txt);">${MS[m]} ${year}</div>`,'',null,
+      (td,day)=>{td.style.cursor='default';td.style.background='var(--hdr-dark)';td.style.color='var(--hdr-dark-txt)';td.style.fontSize='10px';td.style.fontWeight='500';if(day.d===1)td.textContent=MS[m];},`month-${m}`);
+    tbody.lastElementChild.querySelector('.td-lbl').style.background='var(--hdr-dark)';
 
     // Date header row
     mkRow(`<div></div>`,'',null,
@@ -619,6 +648,8 @@ function buildVert(){
           if(isSt){inn.style.borderLeft=`3px solid ${c.bar}`;inn.style.borderRadius='3px 0 0 3px';const lbl=document.createElement('span');lbl.className='eblbl';lbl.style.color=c.txt;lbl.textContent=pr.name+' '+pct+'%';inn.appendChild(lbl);}
           if(isEn){inn.style.borderRight=`2px solid ${c.bar}`;if(!isSt)inn.style.borderRadius='0 3px 3px 0';}
           const bar=document.createElement('div');bar.className='eb';bar.appendChild(inn);td.appendChild(bar);}
+        const ms=projMsOn(pr,day.str);
+        if(ms){const dia=document.createElement('div');dia.className='ms-dia';dia.style.cssText=`background:${c.brd};border:2px solid ${c.bg};width:10px;height:10px;`;dia.onclick=e=>{e.stopPropagation();openEditProject(pr.id);};dia.onmouseenter=e=>showMsTip(e,ms,pr);dia.onmousemove=positionMsTip;dia.onmouseleave=hideMsTip;td.appendChild(dia);td.style.cursor='pointer';}
       });});
 
     // Bill lanes
@@ -659,50 +690,59 @@ function buildDash(){
 }
 
 function scrollToToday(){
-  if(year!==CY)return;
   setTimeout(()=>{
     const body=document.getElementById('body');
     if(!body)return;
     if(dMode==='v'){
-      const todayMonth=NOW.getMonth();
-      const monthEl=document.getElementById(`month-${todayMonth}`);
-      if(monthEl){
-        const wrap=body.querySelector('.vert-wrap');
-        if(wrap){
-          const offsetTop=monthEl.offsetTop-50;
-          wrap.scrollTop=Math.max(0,offsetTop);
-        }
-      }
+      const wrap=body.querySelector('.vert-wrap');
+      if(!wrap)return;
+      if(year!==CY){wrap.scrollTop=0;return;}
+      const monthEl=document.getElementById(`month-${NOW.getMonth()}`);
+      if(monthEl)wrap.scrollTop=Math.max(0,monthEl.offsetTop-50);
     }else{
-      const table=body.querySelector('table.ct');
-      if(table){
-        const wrap=body.querySelector('[style*="overflow:auto"]');
-        if(wrap){
-          const todayIndex=[...document.querySelectorAll('.th-tod')][0];
-          if(todayIndex){
-            const offsetLeft=todayIndex.offsetLeft-100;
-            wrap.scrollLeft=Math.max(0,offsetLeft);
-          }
-        }
-      }
+      const wrap=body.querySelector('.hwrap');
+      if(!wrap)return;
+      if(year!==CY){wrap.scrollLeft=0;return;}
+      const dl=dayList();
+      const idx=dl.findIndex(d=>d.str===TODAY);
+      if(idx>=0)wrap.scrollLeft=Math.max(0,idx*26-140);
     }
   },50);
 }
+function restoreScroll(pos){
+  if(!pos)return;
+  setTimeout(()=>{
+    const body=document.getElementById('body');
+    const wrap=body&&(body.querySelector('.hwrap')||body.querySelector('.vert-wrap'));
+    if(wrap){wrap.scrollLeft=pos.left;wrap.scrollTop=pos.top;}
+  },0);
+}
+function jumpToday(){
+  if(year!==CY){year=CY;document.getElementById('yrL').textContent=year;}
+  render({goToday:true});
+}
 
 /* ── RENDER ── */
-function render(){
+function render(opts){
+  opts=opts||{};
   _ph=null;buildLB();
   document.getElementById('bCal').className='tb'+(vMode==='cal'?' on':'');
   document.getElementById('bDash').className='tb'+(vMode==='dash'?' on':'');
   document.getElementById('bH').className='tb'+(dMode==='h'?' on':'');
   document.getElementById('bV').className='tb'+(dMode==='v'?' on':'');
-  const body=document.getElementById('body');body.innerHTML='';
+  const body=document.getElementById('body');
+  const oldWrap=body.querySelector('.hwrap')||body.querySelector('.vert-wrap');
+  const oldScroll=oldWrap?{left:oldWrap.scrollLeft,top:oldWrap.scrollTop}:null;
+  body.innerHTML='';
   if(vMode==='dash'){body.appendChild(buildDash());body.appendChild(buildSB());return;}
-  if(dMode==='v'){body.appendChild(buildVert());body.appendChild(buildSB());scrollToToday();return;}
-  body.appendChild(buildHoriz());body.appendChild(buildSB());scrollToToday();
+  if(dMode==='v'){body.appendChild(buildVert());body.appendChild(buildSB());
+    if(opts.goToday)scrollToToday();else restoreScroll(oldScroll);
+    return;}
+  body.appendChild(buildHoriz());body.appendChild(buildSB());
+  if(opts.goToday)scrollToToday();else restoreScroll(oldScroll);
 }
-function setView(v){vMode=v;render();}
-function setDir(d){dMode=d;render();}
+function setView(v){vMode=v;render({goToday:true});}
+function setDir(d){dMode=d;render({goToday:true});}
 
 /* ── EVENT MODAL ── */
 let editEvId=null;
@@ -827,15 +867,15 @@ function savePer(id){const name=document.getElementById('pN').value.trim();const
 function delPer(id){people=people.filter(p=>p.id!==id);events=events.filter(e=>e.pid!==id);hidden.delete(id);scheduleSave();closeMod();render();}
 
 /* ── BOOT ── */
-document.getElementById('pY').onclick=()=>{year--;document.getElementById('yrL').textContent=year;render();};
-document.getElementById('nY').onclick=()=>{year++;document.getElementById('yrL').textContent=year;render();};
+document.getElementById('pY').onclick=()=>{year--;document.getElementById('yrL').textContent=year;render({goToday:true});};
+document.getElementById('nY').onclick=()=>{year++;document.getElementById('yrL').textContent=year;render({goToday:true});};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){_tmpMs=null;closeMod();}});
 
 async function boot(){
   document.getElementById('loadingMsg').textContent='Loading your calendar...';
   await loadFromCloud();
   document.getElementById('yrL').textContent=year;
-  render();
+  render({goToday:true});
   document.getElementById('loadingScreen').style.display='none';
   document.getElementById('app').style.display='block';
   subscribeToChanges();
