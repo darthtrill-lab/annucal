@@ -11,7 +11,7 @@
   --bg:#fff;--bg2:#f7f7f5;--bg3:#f1efea;--border:#e5e3dc;--border2:#d0cdc4;
   --text:#1a1a18;--text2:#6b6964;--text3:#9e9b95;
   --blue:#378ADD;--blue-bg:#E6F1FB;--blue-txt:#0C447C;--blue-brd:#185FA5;
-  --hdr-dark:#3a382f;--hdr-dark-txt:rgba(255,255,255,.92);
+  --hdr-dark:#4A515E;--hdr-dark-txt:rgba(255,255,255,.92);--hdr-light:#F0F2F5;
   --teal:#1D9E75;--teal-bg:#E1F5EE;--teal-txt:#085041;--teal-brd:#0F6E56;
   --radius:8px;--radius-lg:12px;
 }
@@ -62,7 +62,7 @@ table.ct{border-collapse:collapse;table-layout:fixed;background:var(--bg);}
 table.ct th,table.ct td{border:0.5px solid var(--border);padding:0;vertical-align:middle;}
 .th-lbl{width:92px;min-width:92px;background:var(--bg2);border-right:1.5px solid var(--border2)!important;position:sticky;left:0;z-index:4;}
 .th-mon{background:var(--hdr-dark);text-align:left;padding:3px 6px;font-size:10px;font-weight:500;color:var(--hdr-dark-txt);text-transform:uppercase;letter-spacing:.4px;border-right:1.5px solid var(--border2)!important;}
-.th-day{width:26px;min-width:26px;max-width:26px;background:var(--bg2);text-align:center;padding:2px 0 3px;}
+.th-day{width:26px;min-width:26px;max-width:26px;background:var(--hdr-light);text-align:center;padding:2px 0 3px;}
 .th-day.wk{background:rgba(153,60,29,.06);}
 .th-day.th-tod{background:rgba(55,138,221,.18);}
 .dn{font-size:10px;font-weight:500;color:var(--text);display:block;}
@@ -190,6 +190,7 @@ table.ct th,table.ct td{border:0.5px solid var(--border);padding:0;vertical-alig
       <button class="ab" onclick="showPeople()">People</button>
       <button class="ab" onclick="showProjectsMgr()">Projects</button>
       <button class="ab" onclick="showBillsMgr()">Bills</button>
+      <button class="ab" id="sbBtn" onclick="sbOpen=!sbOpen;render();">Panel ›</button>
       <button class="ab abp" onclick="openAddEv(TODAY,'')">+ Add event</button>
     </div>
   </div>
@@ -217,7 +218,7 @@ const NOW=new Date();
 const TODAY=NOW.toISOString().split('T')[0];
 const CY=NOW.getFullYear();
 
-let year=CY,vMode='cal',dMode='h';
+let year=CY,vMode='cal',dMode='v',sbOpen=false;
 let _saveTimer=null,_syncChannel=null;
 
 /* ── PALETTES ── */
@@ -251,7 +252,7 @@ const BILL_CATS={
 const CAT_KEYS=Object.keys(BILL_CATS);
 
 /* ── STATE ── */
-let people=[],projects=[],events=[],bills=[],hidden=new Set(),showPH=true;
+let people=[],projects=[],events=[],bills=[],hidden=new Set(),showPH=true,sidebarFocus=null;
 
 const ppal=p=>PPER[p.colorIdx%PPER.length];
 const prpal=p=>PPROJ[p.colorIdx%PPROJ.length];
@@ -443,15 +444,15 @@ function buildLB(){
     `<div class="ldot" style="background:${PH_C.bar};"></div><span style="color:${PH_C.txt};">ON Holidays</span>`,
     ()=>{showPH=!showPH;scheduleSave();render();});
   sep();
-  people.forEach(p=>{const c=ppal(p);const off=hidden.has(p.id);
-    pill('lpill'+(off?' off':''),`background:${c.bg};border-color:${off?'transparent':c.brd};`,
+  people.forEach(p=>{const c=ppal(p);const off=hidden.has(p.id);const focused=sidebarFocus===p.id;
+    pill('lpill'+(off?' off':''),`background:${c.bg};border-color:${off?'transparent':c.brd};${focused?'box-shadow:0 0 0 2px '+c.brd+';':''}`,
       `<div class="ldot" style="background:${c.bar};"></div><span style="color:${c.txt};">${p.name}</span>`,
-      ()=>{if(hidden.has(p.id))hidden.delete(p.id);else hidden.add(p.id);scheduleSave();render();});});
+      ()=>{if(hidden.has(p.id))hidden.delete(p.id);else hidden.add(p.id);sidebarFocus=(sidebarFocus===p.id)?null:p.id;scheduleSave();render();});});
   sep();
-  projects.forEach(pr=>{const c=prpal(pr);const off=hidden.has(pr.id);
-    pill('lpill-sq'+(off?' off':''),`background:${c.bg};border-color:${off?'transparent':c.brd};`,
+  projects.forEach(pr=>{const c=prpal(pr);const off=hidden.has(pr.id);const focused=sidebarFocus===pr.id;
+    pill('lpill-sq'+(off?' off':''),`background:${c.bg};border-color:${off?'transparent':c.brd};${focused?'box-shadow:0 0 0 2px '+c.brd+';':''}`,
       `<div style="width:8px;height:8px;transform:rotate(45deg);background:${c.bar};flex-shrink:0;"></div><span style="color:${c.txt};">${pr.name}</span>`,
-      ()=>{if(hidden.has(pr.id))hidden.delete(pr.id);else hidden.add(pr.id);scheduleSave();render();});});
+      ()=>{if(hidden.has(pr.id))hidden.delete(pr.id);else hidden.add(pr.id);sidebarFocus=(sidebarFocus===pr.id)?null:pr.id;scheduleSave();render();});});
   sep();
   const activeCats=[...new Set(bills.map(b=>b.cat))];
   activeCats.forEach(cat=>{const c=BILL_CATS[cat]||BILL_CATS.other;const off=hidden.has('cat_'+cat);
@@ -477,10 +478,27 @@ function buildSB(){
   const upB=billOccurrences().filter(o=>o.date>=TODAY).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,6);
   if(!upB.length)html+=`<div style="font-size:10px;color:var(--text3);margin-bottom:6px;">No bills yet — add your first to see a monthly average.</div><button class="mb mbs" style="font-size:10px;padding:4px 9px;" onclick="openAddBill()">+ Add bill</button>`;
   upB.forEach(o=>{const c=o.c;const sd=new Date(o.date+'T00:00:00');html+=`<div class="tri" onclick="openEditBill('${o.id}')"><div class="trd" style="background:${c.bar};border-radius:2px;"></div><div style="flex:1;min-width:0;"><div class="trnm">${o.name}</div><div class="trdt">${sd.toLocaleDateString('en-CA',{month:'short',day:'numeric'})} · ${fmt$(o.amount)}</div></div></div>`;});
-  html+=`<div class="sb-h">Upcoming events</div>`;
-  const upE=expandedEvents().filter(e=>e.end>=TODAY&&!hidden.has(e.pid)).sort((a,b)=>a.start.localeCompare(b.start)).slice(0,5);
-  if(!upE.length)html+=`<div style="font-size:10px;color:var(--text3);margin-bottom:6px;">No upcoming events — plan your next trip or day off.</div><button class="mb mbs" style="font-size:10px;padding:4px 9px;" onclick="openAddEv(TODAY,people[0]?.id||'')">+ Add event</button>`;
-  upE.forEach(ev=>{const p=pById(ev.pid);if(!p)return;const c=ppal(p);const sd=new Date(ev.start+'T00:00:00');html+=`<div class="tri" onclick="openEditEv('${ev._orig||ev.id}')"><div class="trd" style="background:${c.bar};"></div><div style="flex:1;min-width:0;"><div class="trnm">${ev.title}${ev.recur&&ev.recur!=='none'?' ↻':''}</div><div class="trdt">${p.name} · ${sd.toLocaleDateString('en-CA',{month:'short',day:'numeric'})}</div></div></div>`;});
+  const focPerson=sidebarFocus?people.find(p=>p.id===sidebarFocus):null;
+  const focProject=sidebarFocus?projects.find(pr=>pr.id===sidebarFocus):null;
+  if(focPerson){
+    const fc=ppal(focPerson);
+    html+=`<div class="sb-h" style="display:flex;align-items:center;justify-content:space-between;">Events — ${focPerson.name}<button onclick="sidebarFocus=null;render();" style="background:none;border:none;font-size:9px;color:var(--text3);cursor:pointer;padding:0;">✕ All</button></div>`;
+    const persEvs=expandedEvents().filter(e=>e.pid===focPerson.id).sort((a,b)=>a.start.localeCompare(b.start));
+    if(!persEvs.length)html+=`<div style="font-size:10px;color:var(--text3);">No events this year.</div>`;
+    persEvs.forEach(ev=>{const sd=new Date(ev.start+'T00:00:00');html+=`<div class="tri" onclick="openEditEv('${ev._orig||ev.id}')"><div class="trd" style="background:${fc.bar};"></div><div style="flex:1;min-width:0;"><div class="trnm">${ev.title}${ev.recur&&ev.recur!=='none'?' ↻':''}</div><div class="trdt">${sd.toLocaleDateString('en-CA',{month:'short',day:'numeric'})}</div></div></div>`;});
+  } else if(focProject){
+    const pc=prpal(focProject);const ppct=projProgress(focProject);
+    html+=`<div class="sb-h" style="display:flex;align-items:center;justify-content:space-between;">Milestones — ${focProject.name}<button onclick="sidebarFocus=null;render();" style="background:none;border:none;font-size:9px;color:var(--text3);cursor:pointer;padding:0;">✕ All</button></div>`;
+    html+=`<div class="scard" style="margin-bottom:6px;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;"><span style="font-size:11px;font-weight:500;color:var(--text);">${ppct}% done</span><span style="font-size:9px;color:var(--text3);">${focProject.start} → ${focProject.end}</span></div><div class="bt"><div class="bf" style="width:${ppct}%;background:${pc.bar};"></div></div></div>`;
+    const ms=(focProject.milestones||[]).sort((a,b)=>a.date.localeCompare(b.date));
+    if(!ms.length)html+=`<div style="font-size:10px;color:var(--text3);">No milestones added yet.</div>`;
+    ms.forEach(m=>{const past=m.date<TODAY;const sd=new Date(m.date+'T00:00:00');html+=`<div class="phl-row" style="${past?'opacity:.45':''}"><div style="width:7px;height:7px;transform:rotate(45deg);background:${past?pc.bar:pc.brd};flex-shrink:0;margin-top:1px;"></div><span style="font-size:10px;color:var(--text);flex:1;">${m.name}</span><span style="font-size:9px;color:var(--text3);">${sd.toLocaleDateString('en-CA',{month:'short',day:'numeric'})}</span></div>`;});
+  } else {
+    html+=`<div class="sb-h">Upcoming events</div>`;
+    const upE=expandedEvents().filter(e=>e.end>=TODAY&&!hidden.has(e.pid)).sort((a,b)=>a.start.localeCompare(b.start)).slice(0,5);
+    if(!upE.length)html+=`<div style="font-size:10px;color:var(--text3);margin-bottom:6px;">No upcoming events — plan your next trip or day off.</div><button class="mb mbs" style="font-size:10px;padding:4px 9px;" onclick="openAddEv(TODAY,people[0]?.id||'')">+ Add event</button>`;
+    upE.forEach(ev=>{const p=pById(ev.pid);if(!p)return;const c=ppal(p);const sd=new Date(ev.start+'T00:00:00');html+=`<div class="tri" onclick="openEditEv('${ev._orig||ev.id}')"><div class="trd" style="background:${c.bar};"></div><div style="flex:1;min-width:0;"><div class="trnm">${ev.title}${ev.recur&&ev.recur!=='none'?' ↻':''}</div><div class="trdt">${p.name} · ${sd.toLocaleDateString('en-CA',{month:'short',day:'numeric'})}</div></div></div>`;});
+  }
   html+=`<div class="sb-h">Ontario holidays</div>`;
   getHolidays().forEach(h=>{const past=h.date<TODAY;const sd=new Date(h.date+'T00:00:00');html+=`<div class="phl-row" style="${past?'opacity:.4':''}"><div class="phl-dot" style="background:${h.stat?PH_C.bar:'#9FE1CB'};"></div><span style="font-size:10px;color:var(--text);flex:1;">${h.name}</span><span style="font-size:9px;color:var(--text3);">${sd.toLocaleDateString('en-CA',{month:'short',day:'numeric'})}</span></div>`;});
   sb.innerHTML=html;return sb;
@@ -552,19 +570,36 @@ function buildHoriz(){
   people.filter(p=>!hidden.has(p.id)).forEach((p,pi)=>{const c=ppal(p);const t=taken(p.id);const over=t>p.allocated;
     mkRow(laneLabel(p.initials,`width:16px;height:16px;border-radius:50%;background:${c.bg};color:${c.txt};display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:500;flex-shrink:0;`,p.name,t+'/'+p.allocated+'d',over?'#A32D2D':'var(--text3)'),pi===0,
     (td,day,ph)=>{
+      const isToday=(day.str===TODAY&&year===CY);
+      if(!isToday)td.style.background=isWk(day.y,day.m,day.d)?c.bar+'07':c.bar+'0a';
       const evs=evOn(p.id,day.str);
       if(evs.length){const ev=evs[0];const isSt=ev.start===day.str;const isEn=ev.end===day.str;const isSolo=isSt&&isEn;addBar(td,c,ev.title+(ev.recur&&ev.recur!=='none'?' ↻':''),isSt,isSolo,()=>openEditEv(ev._orig||ev.id));if(isEn&&!isSolo&&td.querySelector('.eb-in'))td.querySelector('.eb-in').style.borderRadius='0 3px 3px 0';}
       else td.onclick=()=>openAddEv(day.str,p.id);
       if(ph){const dot=document.createElement('div');dot.style.cssText=`position:absolute;top:1px;right:1px;width:4px;height:4px;border-radius:50%;background:${PH_C.bar};pointer-events:none;`;td.appendChild(dot);}
     });});
 
-  projects.filter(pr=>!hidden.has(pr.id)).forEach((pr,pri)=>{const c=prpal(pr);const pct=projProgress(pr);
+  const _visPrH=projects.filter(pr=>!hidden.has(pr.id));
+  const _visPplH=people.filter(p=>!hidden.has(p.id));
+  if(_visPrH.length>0&&(_visPplH.length>0||showPH)){
+    const divTr=document.createElement('tr');divTr.style.height='14px';
+    const divLbl=document.createElement('td');divLbl.className='td-lbl';
+    divLbl.style.borderTop='1.5px solid var(--border2)';
+    divLbl.innerHTML='<span style="font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);">Projects</span>';
+    divTr.appendChild(divLbl);
+    dl.forEach(day=>{const td=document.createElement('td');td.className='td-d'+(day.isLast?' mo-end':'');td.style.cssText='background:var(--bg2);cursor:default;border-top:1.5px solid var(--border2);';divTr.appendChild(td);});
+    tbody.appendChild(divTr);firstLane=false;
+  }
+  _visPrH.forEach((pr,pri)=>{const c=prpal(pr);const pct=projProgress(pr);
     const totalDays=Math.max(1,(new Date(pr.end)-new Date(pr.start))/864e5);
-    mkRow(laneLabel(pr.initials,`width:16px;height:16px;border-radius:3px;background:${c.bg};color:${c.txt};display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:500;flex-shrink:0;`,pr.name,pct+'% done'),pri===0,
+    const projLbl=`<div style="display:flex;align-items:center;gap:5px;"><div style="width:20px;height:20px;border-radius:3px;background:${c.bar};color:#fff;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;flex-shrink:0;">${pr.initials}</div><div style="min-width:0;flex:1;"><div style="font-size:9px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${pr.name} <span style="color:${c.brd};font-weight:600;">${pct}%</span></div><div style="height:3px;background:${c.bar}28;border-radius:2px;overflow:hidden;margin-top:3px;"><div style="height:100%;width:${pct}%;background:${c.bar};border-radius:2px;"></div></div></div></div>`;
+    mkRow(projLbl,false,
     (td,day)=>{
-      td.style.cursor='default';
+      const isToday=(day.str===TODAY&&year===CY);
+      if(!isToday)td.style.background=isWk(day.y,day.m,day.d)?c.bar+'07':c.bar+'0c';
+      td.style.cursor='pointer';
+      td.onclick=e=>{if(!e.target.classList.contains('ms-dia'))openAddMilestone(pr.id,day.str);};
       if(projSpans(pr,day.str)){const dayOff=Math.max(0,(new Date(day.str)-new Date(pr.start))/864e5);const inP=(dayOff/totalDays*100)<=pct;const isSt=pr.start===day.str;const isEn=pr.end===day.str;
-        const inn=document.createElement('div');inn.className='eb-in';inn.style.cssText=`background:${inP?c.bar+'45':c.bar+'18'};border-top:1.5px solid ${c.bar}${inP?'90':'40'};border-bottom:1.5px solid ${c.bar}${inP?'90':'40'};`;
+        const inn=document.createElement('div');inn.className='eb-in';inn.style.cssText=`background:${inP?c.bar+'55':c.bar+'28'};border-top:1.5px solid ${c.bar}${inP?'99':'55'};border-bottom:1.5px solid ${c.bar}${inP?'99':'55'};`;
         if(isSt){inn.style.borderLeft=`3px solid ${c.bar}`;inn.style.borderRadius='3px 0 0 3px';const lbl=document.createElement('span');lbl.className='eblbl';lbl.style.color=c.txt;lbl.textContent=pr.name+' '+pct+'%';inn.appendChild(lbl);}
         if(isEn){inn.style.borderRight=`2px solid ${c.bar}`;if(!isSt)inn.style.borderRadius='0 3px 3px 0';}
         const bar=document.createElement('div');bar.className='eb';bar.appendChild(inn);td.appendChild(bar);}
@@ -621,7 +656,7 @@ function buildVert(){
 
     // Date header row
     mkRow(`<div></div>`,'',null,
-      (td,day)=>{td.style.cursor='default';td.style.background='var(--bg2)';td.style.fontSize='9px';const dow=new Date(day.y,day.m,day.d).getDay();const isTod=(day.str===TODAY&&day.y===CY);const numStyle=isTod?'display:flex;align-items:center;justify-content:center;width:16px;height:16px;margin:0 auto;background:var(--blue);color:#fff;border-radius:50%;font-size:9px;font-weight:600;':'display:block;font-size:10px;font-weight:500;color:var(--text);';td.innerHTML=`<span style="${numStyle}">${String(day.d).padStart(2,'0')}</span><span style="display:block;font-size:7px;color:${isTod?'var(--blue)':'var(--text3)'};font-weight:${isTod?'600':'normal'};">${DW[dow]}</span>`;});
+      (td,day)=>{td.style.cursor='default';td.style.background='var(--hdr-light)';td.style.fontSize='9px';const dow=new Date(day.y,day.m,day.d).getDay();const isTod=(day.str===TODAY&&day.y===CY);const numStyle=isTod?'display:flex;align-items:center;justify-content:center;width:16px;height:16px;margin:0 auto;background:var(--blue);color:#fff;border-radius:50%;font-size:9px;font-weight:600;':'display:block;font-size:10px;font-weight:500;color:var(--text);';td.innerHTML=`<span style="${numStyle}">${String(day.d).padStart(2,'0')}</span><span style="display:block;font-size:7px;color:${isTod?'var(--blue)':'var(--text3)'};font-weight:${isTod?'600':'normal'};">${DW[dow]}</span>`;});
 
     // Holidays lane
     if(showPH){mkRow(laneLabel('ON',`width:16px;height:16px;border-radius:50%;background:${PH_C.bg};color:${PH_C.txt};display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:500;flex-shrink:0;`,'Holidays','Ontario'),false,'32px',
@@ -631,20 +666,38 @@ function buildVert(){
     people.filter(p=>!hidden.has(p.id)).forEach((p,pi)=>{const c=ppal(p);const t=taken(p.id);const over=t>p.allocated;
       mkRow(laneLabel(p.initials,`width:16px;height:16px;border-radius:50%;background:${c.bg};color:${c.txt};display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:500;flex-shrink:0;`,p.name,t+'/'+p.allocated+'d',over?'#A32D2D':'var(--text3)'),pi===0,'32px',
       (td,day,ph)=>{
+        const isToday=(day.str===TODAY&&year===CY);
+        if(!isToday)td.style.background=isWk(day.y,day.m,day.d)?c.bar+'07':c.bar+'0a';
         const evs=evOn(p.id,day.str);
         if(evs.length){const ev=evs[0];const isSt=ev.start===day.str;const isEn=ev.end===day.str;const isSolo=isSt&&isEn;addBar(td,c,ev.title+(ev.recur&&ev.recur!=='none'?' ↻':''),isSt,isSolo,()=>openEditEv(ev._orig||ev.id));if(isEn&&!isSolo&&td.querySelector('.eb-in'))td.querySelector('.eb-in').style.borderRadius='0 3px 3px 0';}
         else td.onclick=()=>openAddEv(day.str,p.id);
         if(ph){const dot=document.createElement('div');dot.style.cssText=`position:absolute;top:1px;right:1px;width:4px;height:4px;border-radius:50%;background:${PH_C.bar};pointer-events:none;`;td.appendChild(dot);}
       });});
 
+    // Project section divider
+    const _visPrV=projects.filter(pr=>!hidden.has(pr.id));
+    const _visPplV=people.filter(p=>!hidden.has(p.id));
+    if(_visPrV.length>0&&(_visPplV.length>0||showPH)){
+      const divTr=document.createElement('tr');divTr.style.height='14px';
+      const divLbl=document.createElement('td');divLbl.className='td-lbl';
+      divLbl.style.borderTop='1.5px solid var(--border2)';
+      divLbl.innerHTML='<span style="font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);">Projects</span>';
+      divTr.appendChild(divLbl);
+      for(let d=1;d<=dim(m,year);d++){const td=document.createElement('td');td.className='td-d'+(d===dim(m,year)?' mo-end':'');td.style.cssText='background:var(--bg2);cursor:default;border-top:1.5px solid var(--border2);';divTr.appendChild(td);}
+      tbody.appendChild(divTr);firstLane=false;
+    }
     // Project lanes
-    projects.filter(pr=>!hidden.has(pr.id)).forEach((pr,pri)=>{const c=prpal(pr);const pct=projProgress(pr);
+    _visPrV.forEach((pr)=>{const c=prpal(pr);const pct=projProgress(pr);
       const totalDays=Math.max(1,(new Date(pr.end)-new Date(pr.start))/864e5);
-      mkRow(laneLabel(pr.initials,`width:16px;height:16px;border-radius:3px;background:${c.bg};color:${c.txt};display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:500;flex-shrink:0;`,pr.name,pct+'% done'),pri===0,'32px',
+      const projLbl=`<div style="display:flex;align-items:center;gap:5px;"><div style="width:20px;height:20px;border-radius:3px;background:${c.bar};color:#fff;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;flex-shrink:0;">${pr.initials}</div><div style="min-width:0;flex:1;"><div style="font-size:9px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${pr.name} <span style="color:${c.brd};font-weight:600;">${pct}%</span></div><div style="height:3px;background:${c.bar}28;border-radius:2px;overflow:hidden;margin-top:3px;"><div style="height:100%;width:${pct}%;background:${c.bar};border-radius:2px;"></div></div></div></div>`;
+      mkRow(projLbl,false,'32px',
       (td,day)=>{
-        td.style.cursor='default';
+        const isToday=(day.str===TODAY&&year===CY);
+        if(!isToday)td.style.background=isWk(day.y,day.m,day.d)?c.bar+'07':c.bar+'0c';
+        td.style.cursor='pointer';
+        td.onclick=e=>{if(!e.target.classList.contains('ms-dia'))openAddMilestone(pr.id,day.str);};
         if(projSpans(pr,day.str)){const dayOff=Math.max(0,(new Date(day.str)-new Date(pr.start))/864e5);const inP=(dayOff/totalDays*100)<=pct;const isSt=pr.start===day.str;const isEn=pr.end===day.str;
-          const inn=document.createElement('div');inn.className='eb-in';inn.style.cssText=`background:${inP?c.bar+'45':c.bar+'18'};border-top:1.5px solid ${c.bar}${inP?'90':'40'};border-bottom:1.5px solid ${c.bar}${inP?'90':'40'};`;
+          const inn=document.createElement('div');inn.className='eb-in';inn.style.cssText=`background:${inP?c.bar+'55':c.bar+'28'};border-top:1.5px solid ${c.bar}${inP?'99':'55'};border-bottom:1.5px solid ${c.bar}${inP?'99':'55'};`;
           if(isSt){inn.style.borderLeft=`3px solid ${c.bar}`;inn.style.borderRadius='3px 0 0 3px';const lbl=document.createElement('span');lbl.className='eblbl';lbl.style.color=c.txt;lbl.textContent=pr.name+' '+pct+'%';inn.appendChild(lbl);}
           if(isEn){inn.style.borderRight=`2px solid ${c.bar}`;if(!isSt)inn.style.borderRadius='0 3px 3px 0';}
           const bar=document.createElement('div');bar.className='eb';bar.appendChild(inn);td.appendChild(bar);}
@@ -730,15 +783,17 @@ function render(opts){
   document.getElementById('bDash').className='tb'+(vMode==='dash'?' on':'');
   document.getElementById('bH').className='tb'+(dMode==='h'?' on':'');
   document.getElementById('bV').className='tb'+(dMode==='v'?' on':'');
+  const sbBtn=document.getElementById('sbBtn');
+  if(sbBtn)sbBtn.textContent=sbOpen?'Panel ‹':'Panel ›';
   const body=document.getElementById('body');
   const oldWrap=body.querySelector('.hwrap')||body.querySelector('.vert-wrap');
   const oldScroll=oldWrap?{left:oldWrap.scrollLeft,top:oldWrap.scrollTop}:null;
   body.innerHTML='';
-  if(vMode==='dash'){body.appendChild(buildDash());body.appendChild(buildSB());return;}
-  if(dMode==='v'){body.appendChild(buildVert());body.appendChild(buildSB());
+  if(vMode==='dash'){body.appendChild(buildDash());if(sbOpen)body.appendChild(buildSB());return;}
+  if(dMode==='v'){body.appendChild(buildVert());if(sbOpen)body.appendChild(buildSB());
     if(opts.goToday)scrollToToday();else restoreScroll(oldScroll);
     return;}
-  body.appendChild(buildHoriz());body.appendChild(buildSB());
+  body.appendChild(buildHoriz());if(sbOpen)body.appendChild(buildSB());
   if(opts.goToday)scrollToToday();else restoreScroll(oldScroll);
 }
 function setView(v){vMode=v;render({goToday:true});}
@@ -865,6 +920,29 @@ function editPersonForm(id){
 function selSwPer(i,el){document.getElementById('pCI').value=i;document.querySelectorAll('.sw').forEach(s=>s.classList.remove('on'));el.classList.add('on');}
 function savePer(id){const name=document.getElementById('pN').value.trim();const initials=document.getElementById('pI').value.trim().toUpperCase().slice(0,2);const allocated=parseInt(document.getElementById('pD').value)||0;const colorIdx=parseInt(document.getElementById('pCI').value)||0;if(!name||!initials)return;if(id){const i=people.findIndex(p=>p.id===id);if(i>=0)people[i]={...people[i],name,initials,allocated,colorIdx};}else people.push({id:'p'+Date.now(),name,initials,allocated,colorIdx});scheduleSave();closeMod();render();}
 function delPer(id){people=people.filter(p=>p.id!==id);events=events.filter(e=>e.pid!==id);hidden.delete(id);scheduleSave();closeMod();render();}
+
+/* ── ADD MILESTONE ── */
+function openAddMilestone(prId,date){
+  const pr=projects.find(p=>p.id===prId);if(!pr)return;
+  document.getElementById('mroot').innerHTML=`<div class="mov" id="mOv"><div class="mbox" style="width:300px;">
+    <h3>Add milestone</h3>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:10px;">${pr.name}</div>
+    <div class="fg"><label>Name</label><input type="text" id="msN" placeholder="e.g. Permits approved"/></div>
+    <div class="fg"><label>Date</label><input type="date" id="msD" value="${date}"/></div>
+    <div class="mbtns"><button class="mb mbc" onclick="closeMod()">Cancel</button><button class="mb mbs" onclick="saveMilestone('${prId}')">Add</button></div>
+  </div></div>`;
+  document.getElementById('mOv').onclick=e=>{if(e.target.id==='mOv')closeMod();};
+  setTimeout(()=>document.getElementById('msN')?.focus(),50);
+}
+function saveMilestone(prId){
+  const name=document.getElementById('msN').value.trim();
+  const date=document.getElementById('msD').value;
+  if(!name||!date)return;
+  const pr=projects.find(p=>p.id===prId);if(!pr)return;
+  if(!pr.milestones)pr.milestones=[];
+  pr.milestones.push({id:'m'+Date.now(),name,date});
+  scheduleSave();closeMod();render();
+}
 
 /* ── BOOT ── */
 document.getElementById('pY').onclick=()=>{year--;document.getElementById('yrL').textContent=year;render({goToday:true});};
