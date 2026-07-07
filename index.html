@@ -158,6 +158,51 @@ table.ct th,table.ct td{border:0.5px solid var(--border);padding:0;vertical-alig
 .loading-sub{font-size:13px;color:var(--text3);}
 .spinner{width:24px;height:24px;border:2.5px solid var(--border2);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
+/* ── MOBILE / RESPONSIVE ── */
+.mob-only{display:none;}
+.mob-month-strip{display:none;align-items:center;gap:4px;padding:7px 12px;border-top:0.5px solid var(--border);background:var(--bg);min-height:44px;}
+.mob-chev{width:36px;height:36px;border:none;background:none;font-size:22px;color:var(--text2);cursor:pointer;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;min-width:44px;min-height:44px;}
+.mob-chev:active{background:var(--bg2);}
+.mob-month-lbl{font-size:15px;font-weight:600;color:var(--text);letter-spacing:-.3px;flex:1;}
+.mob-today-btn{padding:6px 14px;font-size:12px;font-weight:500;border:0.5px solid var(--border2);border-radius:20px;background:none;color:var(--text2);cursor:pointer;min-height:36px;white-space:nowrap;}
+.mob-today-btn:active{background:var(--bg2);}
+.mob-panel-btn{width:44px;height:44px;border:none;background:none;font-size:18px;color:var(--text2);cursor:pointer;display:none;align-items:center;justify-content:center;border-radius:8px;flex-shrink:0;}
+.mob-panel-btn:active{background:var(--bg2);}
+.mob-btabs{position:fixed;bottom:0;left:0;right:0;display:none;background:var(--bg);border-top:0.5px solid var(--border);z-index:20;padding-bottom:env(safe-area-inset-bottom,0px);}
+.mob-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:56px;border:none;background:none;cursor:pointer;color:var(--text3);padding:4px 0;min-width:44px;font-family:inherit;}
+.mob-tab.on{color:var(--blue);}
+.mob-tab-lbl{font-size:11px;font-weight:500;}
+.mob-tab-bar{width:20px;height:2px;border-radius:1px;background:transparent;margin-bottom:4px;}
+.mob-tab.on .mob-tab-bar{background:var(--blue);}
+.mob-fab{position:fixed;bottom:68px;right:16px;width:56px;height:56px;border-radius:50%;background:var(--blue);color:#fff;border:none;font-size:30px;font-weight:300;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:19;box-shadow:0 4px 14px rgba(55,138,221,.45);line-height:1;font-family:inherit;}
+.mob-sheet-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.38);z-index:30;}
+.mob-sheet{position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-radius:16px 16px 0 0;max-height:82vh;overflow-y:auto;z-index:31;padding:0 14px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateY(100%);transition:transform .28s cubic-bezier(.32,.72,0,1);}
+.mob-sheet.open{transform:translateY(0);}
+.mob-sheet-handle{width:36px;height:4px;border-radius:2px;background:var(--border2);margin:12px auto 14px;cursor:pointer;}
+.mob-agenda{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 12px 80px;}
+.mob-day-hdr{font-size:10px;font-weight:600;color:var(--text3);margin:16px 0 6px;text-transform:uppercase;letter-spacing:.5px;}
+.mob-day-hdr.today{color:var(--blue);}
+.mob-card{display:flex;background:var(--bg);border-radius:10px;margin-bottom:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.07);cursor:pointer;border:0.5px solid var(--border);}
+.mob-card:active{opacity:.75;}
+.mob-card-bar{width:4px;flex-shrink:0;}
+.mob-card-body{padding:10px 12px;flex:1;min-width:0;}
+.mob-card-title{font-size:14px;font-weight:600;color:var(--text);}
+.mob-card-sub{font-size:12px;color:var(--text3);margin-top:2px;}
+.mob-empty{text-align:center;padding:48px 0;color:var(--text3);font-size:13px;}
+.mob-sect-hdr{font-size:12px;font-weight:600;color:var(--text);margin:0 0 10px;padding-top:4px;}
+@media(max-width:640px){
+  .desk-only{display:none!important;}
+  .mob-only{display:flex!important;}
+  .mob-panel-btn{display:flex!important;}
+  .mob-month-strip{display:flex;}
+  .mob-btabs{display:flex;}
+  .mob-fab{display:flex;}
+  .tb1{flex-wrap:nowrap;padding:10px 0;}
+  #app{height:100dvh;display:flex;flex-direction:column;overflow:hidden;}
+  .topbar{flex-shrink:0;}
+  .body{flex:1!important;height:0!important;min-height:0;display:flex;flex-direction:column;overflow:hidden;}
+  .mob-agenda{flex:1;min-height:0;}
+}
 </style>
 </head>
 <body>
@@ -172,20 +217,20 @@ table.ct th,table.ct td{border:0.5px solid var(--border);padding:0;vertical-alig
 <div class="topbar">
   <div class="tb1">
     <span class="logo">annu<em>cal</em></span>
-    <button class="yn" id="pY">&#8249;</button>
-    <span class="yrlbl" id="yrL">2026</span>
-    <button class="yn" id="nY">&#8250;</button>
-    <button class="ab abp" id="todayBtn" onclick="jumpToday()">Today</button>
-    <div class="vsep"></div>
-    <div class="tog">
+    <button class="yn desk-only" id="pY">&#8249;</button>
+    <span class="yrlbl desk-only" id="yrL">2026</span>
+    <button class="yn desk-only" id="nY">&#8250;</button>
+    <button class="ab abp desk-only" id="todayBtn" onclick="jumpToday()">Today</button>
+    <div class="vsep desk-only"></div>
+    <div class="tog desk-only">
       <button class="tb on" id="bCal" onclick="setView('cal')">Calendar</button>
       <button class="tb" id="bDash" onclick="setView('dash')">Dashboard</button>
     </div>
-    <div class="tog">
+    <div class="tog desk-only">
       <button class="tb on" id="bH" onclick="setDir('h')">Horizontal</button>
       <button class="tb" id="bV" onclick="setDir('v')">Vertical</button>
     </div>
-    <div class="ml" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+    <div class="ml desk-only" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
       <div class="sync-badge"><div class="sync-dot" id="syncDot"></div><span id="syncLbl">Syncing...</span></div>
       <button class="ab" onclick="showPeople()">People</button>
       <button class="ab" onclick="showProjectsMgr()">Projects</button>
@@ -193,13 +238,48 @@ table.ct th,table.ct td{border:0.5px solid var(--border);padding:0;vertical-alig
       <button class="ab" id="sbBtn" onclick="sbOpen=!sbOpen;render();">Panel ›</button>
       <button class="ab abp" onclick="openAddEv(TODAY,'')">+ Add event</button>
     </div>
+    <!-- Mobile: sync dot + panel toggle on right -->
+    <div class="mob-only" style="margin-left:auto;align-items:center;gap:8px;">
+      <button class="mob-panel-btn" onclick="sbOpen=!sbOpen;render();" title="Summary panel">&#9776;</button>
+      <div class="sync-dot" id="syncDotMob" style="width:8px;height:8px;border-radius:50%;background:#ccc;flex-shrink:0;"></div>
+    </div>
   </div>
-  <div class="lanebar" id="lb"></div>
+  <div class="lanebar desk-only" id="lb"></div>
+  <!-- Mobile month context strip -->
+  <div class="mob-month-strip">
+    <button class="mob-chev" onclick="mobPrev()">&#8249;</button>
+    <span class="mob-month-lbl" id="mobMonthLbl">July 2026</span>
+    <button class="mob-today-btn" onclick="mobToday()">Today</button>
+    <button class="mob-chev" onclick="mobNext()">&#8250;</button>
+  </div>
 </div>
 <div class="body" id="body"></div>
 </div>
 
 <div id="mroot"></div>
+<!-- Mobile bottom sheet root -->
+<div id="mobSheetRoot"></div>
+<!-- Mobile bottom tab bar -->
+<div class="mob-btabs">
+  <button class="mob-tab on" id="mTabCal">
+    <div class="mob-tab-bar"></div>
+    <span class="mob-tab-lbl">Calendar</span>
+  </button>
+  <button class="mob-tab" onclick="showPeople()">
+    <div class="mob-tab-bar"></div>
+    <span class="mob-tab-lbl">People</span>
+  </button>
+  <button class="mob-tab" onclick="showProjectsMgr()">
+    <div class="mob-tab-bar"></div>
+    <span class="mob-tab-lbl">Projects</span>
+  </button>
+  <button class="mob-tab" onclick="showBillsMgr()">
+    <div class="mob-tab-bar"></div>
+    <span class="mob-tab-lbl">Bills</span>
+  </button>
+</div>
+<!-- Mobile FAB -->
+<button class="mob-fab" onclick="openAddEv(TODAY,people[0]?.id||'')">+</button>
 
 <script>
 /* ── CONFIG ── */
@@ -219,6 +299,7 @@ const TODAY=NOW.toISOString().split('T')[0];
 const CY=NOW.getFullYear();
 
 let year=CY,vMode='cal',dMode='v',sbOpen=false;
+let mobMonth=NOW.getMonth();
 let _saveTimer=null,_syncChannel=null;
 
 /* ── PALETTES ── */
@@ -268,9 +349,11 @@ const wkd=(s,e)=>{if(!s||!e)return 0;const sd=new Date(s),ed=new Date(e);let n=0
 function setSyncStatus(status,msg){
   const dot=document.getElementById('syncDot');
   const lbl=document.getElementById('syncLbl');
-  if(!dot||!lbl)return;
-  dot.className='sync-dot '+status;
-  lbl.textContent=msg;
+  if(dot)dot.className='sync-dot '+status;
+  if(lbl)lbl.textContent=msg;
+  const dotMob=document.getElementById('syncDotMob');
+  if(dotMob)dotMob.className='sync-dot '+status;
+  if(dotMob)dotMob.style.cssText=`width:8px;height:8px;border-radius:50%;flex-shrink:0;`;
 }
 
 async function loadFromCloud(){
@@ -778,7 +861,11 @@ function jumpToday(){
 /* ── RENDER ── */
 function render(opts){
   opts=opts||{};
-  _ph=null;buildLB();
+  _ph=null;
+
+  if(isMobile()){renderMobile(opts);return;}
+
+  buildLB();
   document.getElementById('bCal').className='tb'+(vMode==='cal'?' on':'');
   document.getElementById('bDash').className='tb'+(vMode==='dash'?' on':'');
   document.getElementById('bH').className='tb'+(dMode==='h'?' on':'');
@@ -944,10 +1031,149 @@ function saveMilestone(prId){
   scheduleSave();closeMod();render();
 }
 
+/* ── MOBILE ── */
+function isMobile(){return window.innerWidth<=640;}
+
+function fmtRange(s,e){
+  const sd=new Date(s+'T00:00:00');
+  if(!e||e===s)return sd.toLocaleDateString('en-CA',{month:'short',day:'numeric'});
+  const ed=new Date(e+'T00:00:00');
+  return sd.toLocaleDateString('en-CA',{month:'short',day:'numeric'})+' – '+ed.toLocaleDateString('en-CA',{month:'short',day:'numeric'});
+}
+
+function buildAgenda(){
+  const wrap=document.createElement('div');wrap.className='mob-agenda';
+  const m=mobMonth,y=year;
+  const nd=dim(m,y);
+  const moStr=`${y}-${String(m+1).padStart(2,'0')}`;
+  const moStart=moStr+'-01';
+  const moEnd=`${moStr}-${String(nd).padStart(2,'0')}`;
+  const items=[];
+
+  // Events
+  expandedEvents().forEach(ev=>{
+    if(hidden.has(ev.pid))return;
+    const s=ev.start,e=(ev.end||ev.start);
+    if(s>moEnd||e<moStart)return;
+    const p=pById(ev.pid);if(!p)return;
+    const c=ppal(p);
+    const displayDate=s<moStart?moStart:s;
+    items.push({type:'event',date:displayDate,title:ev.title+(ev.recur&&ev.recur!=='none'?' ↻':''),
+      sub:p.name+' · '+fmtRange(s,e),c,onclick:()=>openEditEv(ev._orig||ev.id)});
+  });
+
+  // Ontario holidays
+  if(showPH){
+    getHolidays().filter(h=>h.date.startsWith(moStr)).forEach(h=>{
+      items.push({type:'holiday',date:h.date,title:h.name,sub:'Ontario holiday',c:PH_C,onclick:null});
+    });
+  }
+
+  // Bills
+  billOccurrences().filter(o=>o.date.startsWith(moStr)).forEach(o=>{
+    items.push({type:'bill',date:o.date,title:o.name,
+      sub:o.c.label+' · '+fmt$(o.amount),c:o.c,onclick:()=>openEditBill(o.id)});
+  });
+
+  items.sort((a,b)=>a.date.localeCompare(b.date));
+
+  if(!items.length){
+    wrap.innerHTML='<div class="mob-empty">Nothing scheduled this month</div>';
+    return wrap;
+  }
+
+  // Group by date
+  const byDate={};
+  items.forEach(item=>{if(!byDate[item.date])byDate[item.date]=[];byDate[item.date].push(item);});
+
+  Object.entries(byDate).sort(([a],[b])=>a.localeCompare(b)).forEach(([date,dateItems])=>{
+    const d=new Date(date+'T00:00:00');
+    const isToday=(date===TODAY&&y===CY);
+    const dayHdr=document.createElement('div');
+    dayHdr.className='mob-day-hdr'+(isToday?' today':'');
+    dayHdr.textContent=d.toLocaleDateString('en-CA',{weekday:'short',month:'short',day:'numeric'})+(isToday?' · Today':'');
+    wrap.appendChild(dayHdr);
+
+    dateItems.forEach(item=>{
+      const card=document.createElement('div');card.className='mob-card';
+      if(item.onclick){card.onclick=item.onclick;}else{card.style.cursor='default';}
+      const bar=document.createElement('div');bar.className='mob-card-bar';bar.style.background=item.c.bar;
+      const body=document.createElement('div');body.className='mob-card-body';
+      body.innerHTML=`<div class="mob-card-title">${item.title}</div><div class="mob-card-sub">${item.sub}</div>`;
+      card.appendChild(bar);card.appendChild(body);
+      wrap.appendChild(card);
+    });
+  });
+
+  return wrap;
+}
+
+function updateMobStrip(){
+  const lbl=document.getElementById('mobMonthLbl');
+  if(lbl)lbl.textContent=MF[mobMonth]+' '+year;
+}
+
+function mobPrev(){
+  mobMonth--;
+  if(mobMonth<0){mobMonth=11;year--;const yl=document.getElementById('yrL');if(yl)yl.textContent=year;}
+  render();
+}
+function mobNext(){
+  mobMonth++;
+  if(mobMonth>11){mobMonth=0;year++;const yl=document.getElementById('yrL');if(yl)yl.textContent=year;}
+  render();
+}
+function mobToday(){
+  year=CY;mobMonth=NOW.getMonth();
+  const yl=document.getElementById('yrL');if(yl)yl.textContent=year;
+  render();
+}
+
+function renderMobileSheet(){
+  const root=document.getElementById('mobSheetRoot');
+  if(!root)return;
+  if(!sbOpen){root.innerHTML='';return;}
+  root.innerHTML='';
+  const backdrop=document.createElement('div');backdrop.className='mob-sheet-backdrop';
+  backdrop.onclick=()=>{sbOpen=false;render();};
+  const sheet=document.createElement('div');sheet.className='mob-sheet';
+  const handle=document.createElement('div');handle.className='mob-sheet-handle';
+  handle.onclick=()=>{sbOpen=false;render();};
+  sheet.appendChild(handle);
+  const sbContent=buildSB();
+  sbContent.className='';sbContent.style.cssText='padding:0;';
+  sheet.appendChild(sbContent);
+  // Swipe down to dismiss
+  let startY=0,curY=0;
+  sheet.addEventListener('touchstart',e=>{if(e.touches.length)startY=e.touches[0].clientY;curY=0;},{passive:true});
+  sheet.addEventListener('touchmove',e=>{
+    if(!e.touches.length)return;
+    const delta=e.touches[0].clientY-startY;
+    if(delta>0){curY=delta;sheet.style.transform=`translateY(${delta}px)`;}
+  },{passive:true});
+  sheet.addEventListener('touchend',()=>{
+    if(curY>80){sbOpen=false;render();}
+    else{sheet.style.transform='';}
+  });
+  root.appendChild(backdrop);
+  root.appendChild(sheet);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>sheet.classList.add('open')));
+}
+
+function renderMobile(opts){
+  updateMobStrip();
+  const body=document.getElementById('body');
+  body.innerHTML='';
+  body.appendChild(buildAgenda());
+  renderMobileSheet();
+}
+
 /* ── BOOT ── */
 document.getElementById('pY').onclick=()=>{year--;document.getElementById('yrL').textContent=year;render({goToday:true});};
 document.getElementById('nY').onclick=()=>{year++;document.getElementById('yrL').textContent=year;render({goToday:true});};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){_tmpMs=null;closeMod();}});
+let _resizeTimer=null;
+window.addEventListener('resize',()=>{clearTimeout(_resizeTimer);_resizeTimer=setTimeout(()=>render(),120);});
 
 async function boot(){
   document.getElementById('loadingMsg').textContent='Loading your calendar...';
